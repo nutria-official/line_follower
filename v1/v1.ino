@@ -15,19 +15,16 @@
 #define al_sensor_pin "A1"
 #define ac_sensor_pin "A2"
 
-#define sensor_const 101
-#define update_time 500
+#define sensor_const 500
+#define update_time 50 // In millis
+#define speed = 255.0f; // Universal speed to be used as the benchmark for both wheels.
 
 // Create a struct that can be used to pass all sensor values in one variable
-struct SensorStruct {
-  boolean right;
-  boolean left;
-  boolean center;
-};
-
-uint8_t speed = 255;      // Universal speed to be used as the benchmark for both wheels.
-uint8_t right_speed = 0;  // Right speed: This should be used compared to the benchmark speed, and decreased to turn right.
-uint8_t left_speed = 0;   // Left speed: This should be used compared to the benchmark speed, and decreased to turn left.
+typedef struct {
+  boolean right = false;
+  boolean left = false;
+  boolean center = false;
+} SensorStruct;
 
 void setup() {
   pinMode(M1, OUTPUT);
@@ -44,7 +41,7 @@ void loop() {
 void update() {
   /* This function is called by TimerOne and calls all the other functions necessary */
   SensorStruct x = sensor_status();
-  int angle = set_angle(x);
+  set_ratio(&x);
 }
 
 
@@ -72,15 +69,46 @@ SensorStruct sensor_status() {
   return x;
 }
 
-int set_angle(SensorStruct x) {
+void set_ratio(SensorStruct *x) {
+  int16_t angle = set_angle(&x);
+  
+  float normalised = angle / 180.0; 
+
+  uint8_t left_speed = speed - (normalised * speed);
+  uint8_t right_speed = speed + (normalised * speed);
+
+  set_speed(right_speed, left_speed);
+}
+
+int16_t set_angle(SensorStruct *x) {
   /* This function takes a desired angle as an input, and calls the function set_speed with the correct ratio to turn */
+  switch(x) {
+    case x->right && x->center && !x->left: // Is drifting to the left.
+      return 45;
+    case !x->right && x->center && x->left: // Is drifting to the right.
+      return -45;
+    case x->right && !x->center && !x->left: // Is turning sharp left.
+      return 90;
+    case !x->right && !x->center && x->left: // Is turning sharp right.
+      return -90;
+    case !x->right && x->center && !x->left: // Is driving straight.
+      return 0;
+    case x->right && x->center && x->left: // Is turning, but this is not handled yet.
+      Serial.println("Is doing something we didnt prepare for.");
+      return 0;
+    case x->right && !x->center && x->left: // Is coming back from nowhere.
+      Serial.println("How?? Is coming back on track.");
+      return 0;
+    case !x->right && !x->center && !x->left: // We're out of the track.
+      Serial.println("Is doing something we didnt prepare for. Out of track");
+      return 180;
+    default:
+      Serial.println("SHIIIT");
+  }
+  return 0;
 }
 
-void set_speed(uint8_t right_ratio, uint8_t left_ratio) {
-  /* This function takes the wheel ratio, and tells the engine function what how fast each wheel should turn. */
-}
-
-void engine(uint8_t right_speed, uint8_t left_speed) {
+void set_speed(uint8_t right_speed, uint8_t left_speed) {
   /* This function tells the wheels to turn */
   analogWrite(E1, right_speed);
   analogWrite(E2, left_speed);
