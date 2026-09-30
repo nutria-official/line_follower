@@ -10,10 +10,10 @@
 #define ar_sensor_pin A2
 
 // Calibration for each sensor.
-#define sensor_const_left 700
-#define sensor_const_center 800
-#define sensor_const_right 800
-#define speed 170.0f // Universal speed to be used as the benchmark for both wheels. Max is 255.
+#define sensor_const_left 600
+#define sensor_const_center 700
+#define sensor_const_right 700
+#define speed 200.0f // Universal speed to be used as the benchmark for both wheels. Max is 255.
 
 // Create a struct that can be used to pass all sensor values in one variable
 typedef struct {
@@ -80,6 +80,7 @@ void set_ratio(SensorStruct *x) {
     left_speed = speed;
     right_speed = speed;
   }
+  left_speed *= 1.0f;
 
   set_speed(right_speed, left_speed);
 }
@@ -88,10 +89,10 @@ int16_t set_angle(SensorStruct *x) {
   /* This function takes a desired angle as an input, and calls the function set_speed with the correct ratio to turn */
   if (x->right && x->center && !x->left) {  // Is drifting to the left.
     Serial.print(", right.");
-    return 60;
+    return 45;
   } else if (!x->right && x->center && x->left) { // Is drifting to the right.
     Serial.print(", left.");
-    return -60;
+    return -45;
   } else if (x->right && !x->center && !x->left) { // Is turning sharp left.
     Serial.print(", sharp right.");
     return -90;
