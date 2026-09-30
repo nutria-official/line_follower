@@ -1,5 +1,3 @@
-// #include <TimerOne.h>
-
 // Motor pins:
 #define E1 6  // Speed of right wheel
 #define M1 7  // Direction of right wheel (HIGH/LOW)
@@ -7,14 +5,15 @@
 #define M2 4  // Direction of right wheel (HIGH/LOW)
 
 // Sensor pins:
-
-#define ar_sensor_pin A2
 #define al_sensor_pin A1
 #define ac_sensor_pin A0
+#define ar_sensor_pin A2
 
-#define sensor_const 750
-//#define update_time 50 // In millis
-#define speed 255.0f // Universal speed to be used as the benchmark for both wheels.
+// Calibration for each sensor.
+#define sensor_const_left 700
+#define sensor_const_center 800
+#define sensor_const_right 800
+#define speed 170.0f // Universal speed to be used as the benchmark for both wheels. Max is 255.
 
 // Create a struct that can be used to pass all sensor values in one variable
 typedef struct {
@@ -30,10 +29,8 @@ void setup() {
   pinMode(ac_sensor_pin, INPUT);
   pinMode(ar_sensor_pin, INPUT);
   digitalWrite(M1, LOW);
-  digitalWrite(M2, HIGH);
+  digitalWrite(M2, HIGH); // Needs to be inversed because the wheel is rotating backwards normally.
 
-  //Timer1.initialize(update_time);  // In microseconds
-  //Timer1.attachInterrupt(update);
   Serial.begin(9600);
 }
 
@@ -42,7 +39,6 @@ void loop() {
 }
 
 void update() {
-  /* This function is called by TimerOne and calls all the other functions necessary */
   SensorStruct x = sensor_status();
   set_ratio(&x);
 }
@@ -56,33 +52,34 @@ SensorStruct sensor_status() {
   Serial.print(", ");
   Serial.print(analogRead(ar_sensor_pin));
   SensorStruct x;
-  if (analogRead(ar_sensor_pin) < sensor_const) {
-    x.right = true;  // True means on black line
-  } else {
-    x.right = false;
-  }
 
-  if (analogRead(al_sensor_pin) < sensor_const - 100) {
-    x.left = true;
-  } else {
-    x.left = false;
-  }
-
-  if (analogRead(ac_sensor_pin) < sensor_const) {
-    x.center = true;
-  } else {
-    x.center = false;
-  }
+  x.left = analogRead(al_sensor_pin) < sensor_const_left ? true : false;
+  x.center = analogRead(ac_sensor_pin) < sensor_const_center ? true : false;
+  x.right = analogRead(ar_sensor_pin) < sensor_const_right ? true : false;
   return x;
 }
 
 void set_ratio(SensorStruct *x) {
   int16_t angle = set_angle(x);
   
-  float normalised = angle / 180.0; 
+  float normalised = angle / 180.0f; 
 
-  uint8_t left_speed = (speed - (normalised * speed)) * 1;
-  uint8_t right_speed = (speed + (normalised * speed)) * 1;
+  Serial.print(", norm-angle = ");
+  Serial.print(normalised);
+  Serial.print(", angle = ");
+  Serial.print(angle);
+  uint8_t right_speed = 0;
+  uint8_t left_speed = 0;
+  if (normalised > 0) {
+    left_speed = speed - (normalised * speed);
+    right_speed = speed;
+  } else if (normalised < 0) {
+    left_speed = speed;
+    right_speed = speed + (normalised * speed);
+  } else {
+    left_speed = speed;
+    right_speed = speed;
+  }
 
   set_speed(right_speed, left_speed);
 }
@@ -90,17 +87,17 @@ void set_ratio(SensorStruct *x) {
 int16_t set_angle(SensorStruct *x) {
   /* This function takes a desired angle as an input, and calls the function set_speed with the correct ratio to turn */
   if (x->right && x->center && !x->left) {  // Is drifting to the left.
-    Serial.print(", left.");
-    return 5;
-  } else if (!x->right && x->center && x->left) { // Is drifting to the right.
     Serial.print(", right.");
-    return -5;
+    return 60;
+  } else if (!x->right && x->center && x->left) { // Is drifting to the right.
+    Serial.print(", left.");
+    return -60;
   } else if (x->right && !x->center && !x->left) { // Is turning sharp left.
     Serial.print(", sharp right.");
-    return -10;
+    return -90;
   } else if (!x->right && !x->center && x->left) { // Is turning sharp right.
     Serial.print(", sharp left.");
-    return 10;
+    return 90;
   } else if (!x->right && x->center && !x->left) { // Is driving straight.
     Serial.print(", Straight.");
     return 0;
@@ -112,18 +109,18 @@ int16_t set_angle(SensorStruct *x) {
     return 0;
   } else { // Is out of track.
     Serial.print(", all white");
-    return 180;
+    return 0;
   }
-  Serial.println("was");
+  Serial.println("was"); // "If this happens, I'll buy you an icecream" - Jonathan HA
   return 0;
 }
 
 void set_speed(uint8_t right_speed, uint8_t left_speed) {
   /* This function tells the wheels to turn */
   Serial.print(", ");
-  Serial.print(right_speed);
+  Serial.print(left_speed);
   Serial.print(", ");
-  Serial.println(left_speed);
+  Serial.println(right_speed);
   analogWrite(E1, right_speed);
   analogWrite(E2, left_speed);
 }
