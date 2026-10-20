@@ -15,12 +15,16 @@
 #define sensor_const_right 700
 #define speed 200.0f // Universal speed to be used as the benchmark for both wheels. Max is 255.
 
+#define sensor_buffer 256
+
 // Create a struct that can be used to pass all sensor values in one variable
 typedef struct {
-  boolean right = false;
-  boolean left = false;
-  boolean center = false;
+  boolean right[sensor_buffer];
+  boolean left[sensor_buffer];
+  boolean center[sensor_buffer];
 } SensorStruct;
+
+uint16_t loop_cycles = 0; // Mod 255
 
 void setup() {
   pinMode(M1, OUTPUT);
@@ -39,6 +43,7 @@ void loop() {
 }
 
 void update() {
+  loop_cycles = (loop_cycles + 1) % sensor_buffer == 0 ? 0 : loop_cycles + 1;
   SensorStruct x = sensor_status();
   set_ratio(&x);
 }
