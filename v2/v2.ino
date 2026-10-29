@@ -1,6 +1,3 @@
-//#include "ArduPID.h"
-#include <vector>
-
 // Motor pins:
 #define r_speed_pin 6  // E1: Speed of right wheel
 #define r_direction_pin 7  //M1: Direction of right wheel (HIGH/LOW)
@@ -13,32 +10,31 @@
 #define sensor_buffer 32 // The bots context window.
 
 #define SENSOR_AMOUNT 5
-#define BLACK 0.8f
-#define WHITE 0.2f
+#define BLACK 0.6f
 
-float light_turn = 1/3;
-float hard_turn = 1/5;
+float light_turn = 1.0f/3.0f;
+float hard_turn = 0.1;
 
-int r_speed;
-int l_speed
+int r_speed = u_speed;
+int l_speed = u_speed;
 
-std::vector<int> sensor_black = {
-  900,
-  900,
-  900,
-  900,
-  900,
+int sensor_black[5] = {
+  865,
+  865,
+  895,
+  865,
+  895,
 };
 
- std::vector<int> sensor_white = {
-  700,
-  700,
-  600,
-  500,
-  700,
+int sensor_white[5] = {
+  493,
+  375,
+  532,
+  370,
+  645,
 };
 
-std::vector<float> sensor_values; 
+float sensor_values[5]; 
 
 
 int loop_cycle = 0;
@@ -57,24 +53,24 @@ void loop() {
   Serial.print("A0 = ");
   Serial.print(analogRead(A0));
   Serial.print(", ");
-  Serial.println(sensor_values[0]);
+  Serial.print(sensor_values[0]);
 
-  Serial.print("A1 = ");
+  Serial.print(" A1 = ");
   Serial.print(analogRead(A1));
   Serial.print(", ");
-  Serial.println(sensor_values[1]);
+  Serial.print(sensor_values[1]);
 
-  Serial.print("A2 = ");
+  Serial.print(" A2 = ");
   Serial.print(analogRead(A2));
   Serial.print(", ");
-  Serial.println(sensor_values[2]);
+  Serial.print(sensor_values[2]);
 
-  Serial.print("A4 = ");
+  Serial.print(" A3 = ");
   Serial.print(analogRead(A3));
   Serial.print(", ");
-  Serial.println(sensor_values[3]);
+  Serial.print(sensor_values[3]);
 
-  Serial.print("A4 = ");
+  Serial.print(" A4 = ");
   Serial.print(analogRead(A4));
   Serial.print(", ");
   Serial.println(sensor_values[4]);
@@ -84,18 +80,15 @@ void loop() {
   set_speed();
 }
 
-std::vector<int> read_sensor_data(){
-  return {
+void update_sensor_val() {
+
+  int _sensor_data[5] = {
     analogRead(A0),
     analogRead(A1),
     analogRead(A2),
     analogRead(A3),
     analogRead(A4),
-  }
-}
-
-void update_sensor_val() {
-  std::vector<int> _sensor_data = read_sensor_data(); 
+  };
 
   for(int i = 0; i < SENSOR_AMOUNT; i++){
     int _sensor_diff = sensor_black[i] - sensor_white[i];
@@ -104,25 +97,25 @@ void update_sensor_val() {
 }
 
 void update_direction(){
-  if(sensor_values[0] > BLACK){
+  if(sensor_values[0] < BLACK){
     l_speed = u_speed*hard_turn;
     r_speed = u_speed;
   } 
-  else if(sensor_values[1] > BLACK){
+  else if(sensor_values[1] < BLACK){
     l_speed = u_speed*light_turn;
     r_speed = u_speed;
   } 
   
-  else if(sensor_values[5] > BLACK){
+  else if(sensor_values[4] < BLACK){
     r_speed = u_speed*hard_turn;
     l_speed = u_speed;
   } 
-  else if(sensor_values[4] > BLACK){
+  else if(sensor_values[3] < BLACK){
     r_speed = u_speed*light_turn;
     l_speed = u_speed;
   } 
 
-  if(sensor_values[2] > BLACK){
+  if(sensor_values[2] < BLACK){
     r_speed = u_speed;
     l_speed = u_speed;
   }
