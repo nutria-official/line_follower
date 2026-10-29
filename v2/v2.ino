@@ -11,9 +11,10 @@
 
 #define SENSOR_AMOUNT 5
 #define BLACK 0.6f
+#define CENTER_BLACK 0.3f
 
-float light_turn = 1.0f/3.0f;
-float hard_turn = 0.1;
+float light_turn = 2.0f/3.0f;
+float hard_turn = 0.2;
 
 int r_speed = u_speed;
 int l_speed = u_speed;
@@ -97,7 +98,11 @@ void update_sensor_val() {
 }
 
 void update_direction(){
-  if(sensor_values[0] < BLACK){
+  if(sensor_values[2] < CENTER_BLACK){
+    r_speed = u_speed;
+    l_speed = u_speed;
+  }
+  else if(sensor_values[0] < BLACK){
     l_speed = u_speed*hard_turn;
     r_speed = u_speed;
   } 
@@ -114,11 +119,6 @@ void update_direction(){
     r_speed = u_speed*light_turn;
     l_speed = u_speed;
   } 
-
-  if(sensor_values[2] < BLACK){
-    r_speed = u_speed;
-    l_speed = u_speed;
-  }
 }
 
 void set_speed(){
