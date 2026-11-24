@@ -18,19 +18,19 @@ int r_speed = u_speed;
 int l_speed = u_speed;
 
 int sensor_black[5] = {
-  865,
-  865,
-  895,
-  865,
-  895,
+  845,
+  825,
+  845,
+  850,
+  880,
 };
 
 int sensor_white[5] = {
-  440,
-  375,
-  532,
-  370,
-  645,
+  400,
+  495,
+  360,
+  340,
+  430,
 };
 
 float sensor_values[5]; 
@@ -96,20 +96,9 @@ void update_sensor_val() {
 }
 
 void update_direction(){
-  if(sensor_values[2] < CENTER_BLACK) {
-    r_speed = u_speed;
-    l_speed = u_speed;
-    if(sensor_values[1] < 0.5) {
-      l_speed = u_speed*0.75;
-      r_speed = u_speed;
-    }
-    else if(sensor_values[3] < 0.5) {
-      r_speed = u_speed*0.75;
-      l_speed = u_speed;
-    }
-  }
+  
 
-  else if(sensor_values[0] < BLACK) {
+  if(sensor_values[0] < BLACK) {
     l_speed = u_speed*hard_turn;
     r_speed = u_speed;
     if(sensor_values[1] < 0.5) {
@@ -134,6 +123,18 @@ void update_direction(){
     r_speed = u_speed*light_turn;
     l_speed = u_speed;
   } 
+  else if(sensor_values[2] < CENTER_BLACK) {
+    r_speed = u_speed;
+    l_speed = u_speed;
+    if(sensor_values[1] < 0.5) {
+      l_speed = u_speed*0.75;
+      r_speed = u_speed;
+    }
+    else if(sensor_values[3] < 0.5) {
+      r_speed = u_speed*0.75;
+      l_speed = u_speed;
+    }
+  }
 }
 
 void set_speed(){
